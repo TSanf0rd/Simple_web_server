@@ -1,0 +1,45 @@
+services:
+
+  programming:
+    image: git-docker-classes.mst.edu/containers/container
+    # uncomment the line below to build the container yourself. If you do, comment the line above.
+    # build: .
+    volumes:
+      - ../:/your_code
+    working_dir: /your_code
+    tty: true
+    stdin_open: true
+    # uncomment this line to give the container a name
+    # container_name: class-container
+    command: fish
+
+  networking:
+    image: git-docker-classes.mst.edu/containers/container
+    # uncomment the line below to build the container yourself. If you do, comment the line above.
+    # build: .
+    volumes:
+      - type: bind
+        source: ../
+        target: /your_code
+    working_dir: /your_code
+    tty: true
+    stdin_open: true
+    # Update ports and protocol to your liking
+    ports:
+      - target: 80
+        published: 127.0.0.1:80
+        protocol: tcp
+    command: fish
+
+  # https://stackoverflow.com/questions/38830610/access-jupyter-notebook-running-on-docker-container
+  jupyter:
+    image: git-docker-classes.mst.edu/containers/container
+    volumes:
+      # modify the path left of the : to point towards your sequence-informatics folder
+      - /path/to/sequence-informatics:/sequence-informatics
+    profiles:
+      - cs5700
+    ports:
+      - 8888:8888
+    working_dir: /sequence-informatics
+    command: jupyter lab --ip="0.0.0.0" --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
