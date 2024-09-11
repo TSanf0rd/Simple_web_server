@@ -10,7 +10,7 @@ import importlib
 # and unit tests
 sys.path.append(
     os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "unit_tests"
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tests/unit_tests"
     )
 )
 

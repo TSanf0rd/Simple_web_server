@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TERM was "dumb" on docker...
+# Environment variable TERM was "dumb" on docker...
 [ "$TERM" = "dumb" ] && export TERM=screen-256color
 
 # Clears the screen
@@ -17,11 +17,17 @@ ORANGE=$(tput setaf 202)
 RESET=$(tput sgr0)
 
 section() {
-    echo -e "\n$BLUE===========================================================================================================================$RESET"
+    # Print '=' for however many columns there are
+    # https://stackoverflow.com/a/5915913
+    s=$(head -c "$(tput cols)" </dev/zero | tr '\0' '\075')
+    echo -e "\n$BLUE""$s""$RESET"
 }
 
 subsection() {
-    echo -e "\n$YELLOW---------------------------------------------------------------------------------------------------------------------------$RESET"
+    # Print '-' for however many columns there are
+    # https://stackoverflow.com/a/5915913
+    s=$(head -c "$(tput cols)" </dev/zero | tr '\0' '\055')
+    echo -e "\n$YELLOW""$s""$RESET"
 }
 
 keepgoing() {
@@ -33,7 +39,7 @@ keepgoing() {
 
 check_hashes() {
     # This should be run before any file students could potentially edit.
-    # Assumes you've addded the relevant files to hash_gen.sh
+    # Assumes you've added the relevant files to hash_gen.sh
     # usage: check_hashes
     # () creates a subshell, and so no need to cd back
     (
@@ -46,7 +52,7 @@ check_hashes() {
         # echo "Hashes ok"
     else
         section
-        echo -e "$RED\nDon't edit any of the auotgrader's files, or you will fail!$RESET"
+        echo -e "$RED\nDon't edit any of the autograder's files, or you will fail!$RESET"
         echo "Notice the files listed below, with the long hashes in front of them."
         echo -e "Those are the files you broke.\n"
         diff .admin_files/hashes.txt .admin_files/grader_hashes.txt
@@ -57,7 +63,7 @@ check_hashes() {
         echo "    $ $MAGENTA git checkout firstfourlettersofthehashoftheinstructorslastcommit fileorfolderyoubroke $RESET"
         echo -e "You must do this for each file you broke (or just the super-folder of the grader-files), and then re-run grade.sh.\n"
         grade=0
-        echo "You edited our stuff, and so you get 0; see the output for details" >"$student_file"
+        echo "You edited our stuff, so you get a 0; see the output for details" >"$student_file"
         echo $grade >>"$student_file"
         exit 1
     fi
@@ -66,11 +72,7 @@ check_hashes
 
 for python_package_name in Levenshtein; do
     if ! python3 -c "import $python_package_name"; then
-        echo -e "\npip: Install $package_name using "$MAGENTA""pip3 install --upgrade $python_package_name --user""$RESET" before proceeding, or"
-        echo "OpenSuse: Install $package_name using "$MAGENTA""sudo zypper install python3-$python_package_name""$RESET" before proceeding, or"
-        echo "Debian: Install $package_name using "$MAGENTA""sudo apt install python3-$python_package_name""$RESET" before proceeding"
-        echo -e "    If not found, try lowercase spelling), or"
-        echo "Fedora: Install $package_name using "$MAGENTA""sudo dnf install python3-$python_package_name""$RESET" before proceeding."
+        echo Install $python_package_name before proceeding.
         exit 1
     fi
 done
@@ -83,54 +85,35 @@ if [ $language = "python" ]; then
     fi
     if ! command -v $pudb3 &>/dev/null; then
         echo "Install pudb3 before proceeding."
-        echo "pip3 install pudb --upgrade --user"
-        echo "sudo dnf install python3-pudb"
-        echo "sudo apt install python3-pudb"
-        echo "sudo zypper install python3-pudb"
         exit 1
     fi
     for package_name in mypy black py2cfg; do
         if ! command -v $package_name &>/dev/null; then
             echo Install $package_name before proceeding.
-            echo "$MAGENTA""pip3 install --upgrade $package_name --user"
-            echo "sudo dnf install $package_name"
-            echo "sudo apt install $package_name"
-            echo "sudo zypper install $package_name""$RESET"
             exit 1
         fi
     done
 fi
 if [ $language = "bash" ]; then
-    if ! [ -x ./shfmt ]; then
-        if ! command -v shfmt &>/dev/null; then
-            echo "Install shfmt before proceeding:"
-            echo "$MAGENTA""wget -O ~/bin/shfmt https://github.com/mvdan/sh/releases/download/v3.1.2/shfmt_v3.1.2_linux_amd64""$RESET"
-            echo "$MAGENTA""chmod +x ~/bin/shfmt""$RESET"
-            exit 1
-        fi
-    fi
-    for package_name in shellcheck; do
+    for package_name in shellcheck shfmt; do
         if ! command -v $package_name &>/dev/null; then
             echo Install $package_name before proceeding.
-            echo "Use your Linux system's package manager (apt/zypper/dnf/etc)."
             exit 1
         fi
     done
 fi
 if [ $language = "cpp" ]; then
-    for package_name in clang-format cmake make cppcheck gdb; do
+    for package_name in clang-format make cppcheck gdb; do
         if ! command -v $package_name &>/dev/null; then
             echo Install $package_name before proceeding.
-            echo "Use your Linux system's package manager (apt/zypper/dnf/etc)."
             exit 1
         fi
     done
 fi
 if [ $language = "rust" ]; then
-    for package_name in rustc gdb; do # TODO rustfmt on containter is not great?
+    for package_name in rustc gdb rustfmt; do
         if ! command -v $package_name &>/dev/null; then
             echo Install $package_name before proceeding.
-            echo "Use your Linux system's package manager (apt/zypper/dnf/etc)."
             exit 1
         fi
     done
@@ -186,29 +169,25 @@ unit_tests() {
     # Assumes they don't neeed any standard input (write a custom line for that).
     # Usage: unit_tests
     if [ "$language" = "cpp" ]; then
-        glob_expr="unit_tests/*.cpp"
-        pushd .admin_files >/dev/null 2>&1
-        mkdir -p build >/dev/null 2>&1
-        pushd build >/dev/null 2>&1
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DMAIN_FILE:STRING="$main_file" >/dev/null 2>&1
-        make >/dev/null 2>&1
-        popd >/dev/null 2>&1
-        popd >/dev/null 2>&1
+        make clean
+        glob_expr="tests/unit_tests/*.cpp"
+        make --silent unit_tests
         check_hashes
     elif [ "$language" = "python" ]; then
-        glob_expr="unit_tests/*.py"
+        glob_expr="tests/unit_tests/*.py"
     elif [ "$language" = "bash" ]; then
-        glob_expr="unit_tests/*.sh"
+        glob_expr="tests/unit_tests/*.sh"
     elif [ "$language" = "rust" ]; then
-        glob_expr="unit_tests/*.rs"
-        cargo build
+        cargo clean >/dev/null 2>&1
+        glob_expr="tests/unit_tests/*.rs"
+        cargo build >/dev/null 2>&1
     fi
     first="0"
     for testpath in $glob_expr; do
         if [ $first = "0" ]; then
             section
             echo "$ORANGE""Below here, we will run unit tests.""$RESET"
-            [ $annoying_nodebug = 'd' ] && echo "See the ./unit_tests/ folder for more detail."
+            [ $annoying_nodebug = 'd' ] && echo "See the ./tests/unit_tests/ folder for more detail."
             first="1"
             keepgoing
         fi
@@ -217,14 +196,14 @@ unit_tests() {
         filename=$(basename "$testpath")
         if [ "$language" = "cpp" ]; then
             testname="$(basename "$filename" .cpp)"
-            echo Running command: $ " $MAGENTA"timeout "$process_timeout" ./.admin_files/build/"$testname" "$expected_retcode""$RESET"
-            timeout "$process_timeout" ./.admin_files/build/"$testname" "$expected_retcode"
+            echo Running command: $ " $MAGENTA"timeout "$process_timeout" ./build/"$testname".out "$expected_retcode""$RESET"
+            timeout "$process_timeout" ./build/"$testname".out "$expected_retcode"
         elif [ "$language" = "python" ]; then
-            echo Running command: $ " $MAGENTA"timeout "$process_timeout" python3 unit_tests/"$filename""$RESET"
-            timeout "$process_timeout" python3 .admin_files/test_utils.py unit_tests/"$filename" "$expected_retcode"
+            echo Running command: $ " $MAGENTA"timeout "$process_timeout" python3 tests/unit_tests/"$filename""$RESET"
+            timeout "$process_timeout" python3 .admin_files/test_utils.py tests/unit_tests/"$filename" "$expected_retcode"
         elif [ "$language" = "bash" ]; then
-            echo Running command: $ " $MAGENTA"timeout "$process_timeout" bash unit_tests/"$filename" "$expected_retcode""$RESET"
-            timeout "$process_timeout" bash unit_tests/"$filename" "$expected_retcode"
+            echo Running command: $ " $MAGENTA"timeout "$process_timeout" bash tests/unit_tests/"$filename" "$expected_retcode""$RESET"
+            timeout "$process_timeout" bash tests/unit_tests/"$filename" "$expected_retcode"
         elif [ "$language" = "rust" ]; then
             testname="$(basename "$filename" .rs)"
             echo Running command: $ " $MAGENTA"timeout "$process_timeout" ./target/debug/"$testname" "$expected_retcode""$RESET"
@@ -236,11 +215,12 @@ unit_tests() {
         else
             grade_update "$filename" 0 0
             # https://stackoverflow.com/questions/20010199/how-to-determine-if-a-process-runs-inside-lxc-docker#20012536
-            if [ "$annoying_nodebug" = "g" ] || grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            # if ! [ "$annoying_nodebug" = "g" ] && ! grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
                 :
             else
                 if [ "$language" = "cpp" ]; then
-                    debug_cmd=(gdb '--eval-command="break main"' '--eval-command="run"' --args ./.admin_files/build/"$testname" 123)
+                    debug_cmd=(gdb '--eval-command="break main"' '--eval-command="run"' --args ./build/"$testname".out 123)
                 elif [ "$language" = "python" ]; then
                     debug_cmd=("$pudb3" "$testpath")
                 elif [ "$language" = "bash" ]; then
@@ -266,66 +246,66 @@ stdio_tests() {
 
     # For C++, build the student's main()
     if [ "$language" = "cpp" ]; then
-        rm -f program
-        prog_name=("./program" "$main_file_arguments")
+        make clean
+        prog_name=("./build/program.out" "$main_file_arguments")
         # g++ -Wall -Werror -Wpedantic -g -std=c++14 $1 -o "$prog_name"
         # TODO: Can this be any more discerning, in case of multiple main()s?
-        g++ -Wall -Werror -Wpedantic -g -std=c++14 ./*.cpp -o "program"
+        make --silent
     elif [ "$language" = "python" ]; then
         prog_name=(python3 "$1" "$main_file_arguments")
     elif [ "$language" = "bash" ]; then
         prog_name=(bash "$1" "$main_file_arguments")
     elif [ "$language" = "rust" ]; then
-        prog_name=("./program" "$main_file_arguments")
-        cargo build
-        mv ./target/debug/program program
+        cargo clean >/dev/null 2>&1
+        prog_name=("cargo" "run" "--bin=program" "$main_file_arguments")
+        cargo build >/dev/null 2>&1
     fi
 
-    rm -rf stdio_tests/outputs/*
-    rm -rf stdio_tests/goals/.*.swp
+    rm -rf tests/stdio_tests/outputs/*
+    rm -rf tests/stdio_tests/goals/.*.swp
     first="0"
-    for testpath in stdio_tests/inputs/*.txt; do
+    for testpath in tests/stdio_tests/inputs/*.txt; do
         if [ $first = "0" ]; then
             section
             echo "$ORANGE""Below here, we will run Standard Input/Output (std io) tests.""$RESET"
-            [ $annoying_nodebug = 'd' ] && echo "See the ./stdio_tests/ folder for more detail, including diffs."
+            [ $annoying_nodebug = 'd' ] && echo "See the ./tests/stdio_tests/ folder for more detail, including diffs."
             first="1"
             keepgoing
         fi
         filename=$(basename "$testpath")
         testname="${filename%_*}"
         subsection
-        echo -e "Running command: $ $MAGENTA" timeout "$process_timeout" "${prog_name[@]}" "<$testpath" ">stdio_tests/outputs/$testname"_output.txt"$RESET"
+        echo -e "Running command: $ $MAGENTA" timeout "$process_timeout" "${prog_name[@]}" "<$testpath" ">tests/stdio_tests/outputs/$testname"_output.txt"$RESET"
         t0=$(date +%s.%N)
-        timeout "$process_timeout" "${prog_name[@]}" <"$testpath" >stdio_tests/outputs/"$testname"_output.txt
+        timeout "$process_timeout" "${prog_name[@]}" <"$testpath" >tests/stdio_tests/outputs/"$testname"_output.txt 2>/dev/null
         check_hashes
         echo -e "Your main driver program took the following duration of time to run on the above sample:"
         your_time=$(echo "print($(date +%s.%N) - $t0)" | python3)
         echo -e "    $your_time seconds"
-        diff -y -W 200 stdio_tests/goals/"$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt >stdio_tests/diffs/"$testname".txt
-        vim -d stdio_tests/goals/"$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt \
+        diff -y -W 200 tests/stdio_tests/goals/"$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt >tests/stdio_tests/diffs/"$testname".txt
+        vim -d tests/stdio_tests/goals/"$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt \
             -c 'highlight DiffAdd ctermbg=Grey ctermfg=White' \
             -c 'highlight DiffDelete ctermbg=Grey ctermfg=Black' \
             -c 'highlight DiffChange ctermbg=Grey ctermfg=Black' \
             -c 'highlight DiffText ctermbg=DarkGrey ctermfg=White' \
             -c TOhtml \
-            -c "w! stdio_tests/diffs/$testname.html" \
+            -c "w! tests/stdio_tests/diffs/$testname.html" \
             -c 'qa!' >/dev/null 2>&1
         if [ "$fuzzy_partial_credit" = false ]; then
-            diff stdio_tests/goals/"$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
+            diff tests/stdio_tests/goals/"$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
             grade_update "$testpath" 100 0
             # Just a useless placeholder here:
             fuzzy_diff=0
         else
-            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py "stdio_tests/goals/$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt)
+            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py "tests/stdio_tests/goals/$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt)
             grade_update "$testpath" "$fuzzy_diff" 0
         fi
-        diff stdio_tests/goals/"$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
+        diff tests/stdio_tests/goals/"$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
         if [ "$?" -eq 0 ] || [ "$fuzzy_diff" -eq 100 ]; then
             # bash's no-op is most clear positive logic here...
             :
         else
-            if [ "$annoying_nodebug" = "g" ] || grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
                 :
             else
                 if [ "$language" = "cpp" ]; then
@@ -341,18 +321,18 @@ stdio_tests() {
                 elif [ "$language" = "rust" ]; then
                     debug_cmd=(gdb '--eval-command="break main"' --args "${prog_name[@]}")
                 fi
-                echo -e "\nWe will now run the following to show you your non-caputred output:\n\t$ $MAGENTA" "${prog_name[@]}" "<$testpath$RESET"
+                echo -e "\nWe will now run the following to show you your non-captured output:\n\t$ $MAGENTA" "${prog_name[@]}" "<$testpath$RESET"
                 keepgoing
                 echo ">>>>your output>>>>"
                 "${prog_name[@]}" <"$testpath"
                 check_hashes
                 echo "<<<<your output<<<<"
-                echo -e "\nWe will now show you the differences between your caputred standard out and the goal."
+                echo -e "\nWe will now show you the differences between your captured standard out and the goal."
                 echo "Type$MAGENTA esc :qa!$RESET to leave Vim when you are done."
                 keepgoing
                 # Either meld or vim works, up to you!
-                # meld --diff "stdio_tests/goals/$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt &
-                vim -d "stdio_tests/goals/$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt \
+                # meld --diff "tests/stdio_tests/goals/$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt &
+                vim -d "tests/stdio_tests/goals/$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt \
                     -c 'highlight DiffAdd ctermbg=Grey ctermfg=White' \
                     -c 'highlight DiffDelete ctermbg=Grey ctermfg=Black' \
                     -c 'highlight DiffChange ctermbg=Grey ctermfg=Black' \
@@ -366,9 +346,6 @@ stdio_tests() {
             fi
         fi
     done
-    if [ "$language" = "cpp" ] || [ "$language" = "rust" ]; then
-        rm -f "${prog_name[@]}"
-    fi
 }
 
 arg_tests() {
@@ -378,29 +355,29 @@ arg_tests() {
 
     # For C++, build the student's main()
     if [ "$language" = "cpp" ]; then
-        rm -f program
-        prog_name=("./program")
+        make clean
+        prog_name=("./build/program.out")
         # g++ -Wall -Werror -Wpedantic -g -std=c++14 $1 -o "$prog_name"
         # TODO: Can this be any more discerning, in case of multiple main()s?
-        g++ -Wall -Werror -Wpedantic -g -std=c++14 ./*.cpp -o "program"
+        make --silent
     elif [ "$language" = "python" ]; then
         prog_name=(python3 "$1")
     elif [ "$language" = "bash" ]; then
         prog_name=(bash "$1")
     elif [ "$language" = "rust" ]; then
-        prog_name=("./program")
-        cargo build
-        mv ./target/debug/program program
+        cargo clean >/dev/null 2>&1
+        prog_name=("cargo" "run" "--bin=program")
+        cargo build >/dev/null 2>&1
     fi
 
-    rm -rf arg_tests/outputs/*
-    rm -rf arg_tests/goals/.*.swp
+    rm -rf tests/arg_tests/outputs/*
+    rm -rf tests/arg_tests/goals/.*.swp
     first="0"
-    for testpath in arg_tests/args/*.txt; do
+    for testpath in tests/arg_tests/args/*.txt; do
         if [ $first = "0" ]; then
             section
             echo "$ORANGE""Below here, we will run argument-based tests.""$RESET"
-            [ $annoying_nodebug = 'd' ] && echo "See the ./arg_tests/ folder for more detail, including diffs."
+            [ $annoying_nodebug = 'd' ] && echo "See the ./tests/arg_tests/ folder for more detail, including diffs."
             first="1"
             keepgoing
         fi
@@ -410,35 +387,35 @@ arg_tests() {
         subsection
         echo -e "Running command: $ $MAGENTA" timeout "$process_timeout" "${prog_name[@]}" "${testargs[@]}" "$RESET"
         t0=$(date +%s.%N)
-        timeout "$process_timeout" "${prog_name[@]}" "${testargs[@]}"
+        timeout "$process_timeout" "${prog_name[@]}" "${testargs[@]}" 2>/dev/null
         check_hashes
         echo -e "Your main driver program took the following duration of time to run on the above sample:"
         your_time=$(echo "print($(date +%s.%N) - $t0)" | python3)
         echo -e "    $your_time seconds"
-        diff -y -W 200 arg_tests/goals/"$testname"_output.txt arg_tests/outputs/"$testname"_output.txt >arg_tests/diffs/"$testname".txt
-        vim -d arg_tests/goals/"$testname"_output.txt arg_tests/outputs/"$testname"_output.txt \
+        diff -y -W 200 tests/arg_tests/goals/"$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt >tests/arg_tests/diffs/"$testname".txt
+        vim -d tests/arg_tests/goals/"$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt \
             -c 'highlight DiffAdd ctermbg=Grey ctermfg=White' \
             -c 'highlight DiffDelete ctermbg=Grey ctermfg=Black' \
             -c 'highlight DiffChange ctermbg=Grey ctermfg=Black' \
             -c 'highlight DiffText ctermbg=DarkGrey ctermfg=White' \
             -c TOhtml \
-            -c "w! arg_tests/diffs/$testname.html" \
+            -c "w! tests/arg_tests/diffs/$testname.html" \
             -c 'qa!' >/dev/null 2>&1
         if [ "$fuzzy_partial_credit" = false ]; then
-            diff arg_tests/goals/"$testname"_output.txt arg_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
+            diff tests/arg_tests/goals/"$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
             grade_update "$testpath" 100 0
             # Just a useless placeholder here:
             fuzzy_diff=0
         else
-            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py "arg_tests/goals/$testname"_output.txt arg_tests/outputs/"$testname"_output.txt)
+            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py "tests/arg_tests/goals/$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt)
             grade_update "$testpath" "$fuzzy_diff" 0
         fi
-        diff stdio_tests/goals/"$testname"_output.txt stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
+        diff tests/stdio_tests/goals/"$testname"_output.txt tests/stdio_tests/outputs/"$testname"_output.txt >/dev/null 2>&1
         if [ "$?" -eq 0 ] || [ "$fuzzy_diff" -eq 100 ]; then
             # bash's no-op is most clear positive logic here...
             :
         else
-            if [ "$annoying_nodebug" = "g" ] || grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
                 :
             else
                 if [ "$language" = "cpp" ]; then
@@ -456,8 +433,8 @@ arg_tests() {
                 echo "Type$MAGENTA esc :qa!$RESET to leave Vim when you are done."
                 keepgoing
                 # Either meld or vim works, up to you!
-                # meld --diff "arg_tests/goals/$testname"_output.txt arg_tests/outputs/"$testname"_output.txt &
-                vim -d "arg_tests/goals/$testname"_output.txt arg_tests/outputs/"$testname"_output.txt \
+                # meld --diff "tests/arg_tests/goals/$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt &
+                vim -d "tests/arg_tests/goals/$testname"_output.txt tests/arg_tests/outputs/"$testname"_output.txt \
                     -c 'highlight DiffAdd ctermbg=Grey ctermfg=White' \
                     -c 'highlight DiffDelete ctermbg=Grey ctermfg=Black' \
                     -c 'highlight DiffChange ctermbg=Grey ctermfg=Black' \
@@ -470,9 +447,6 @@ arg_tests() {
             fi
         fi
     done
-    if [ "$language" = "cpp" ] || [ "$language" = "rust" ]; then
-        rm -f "${prog_name[@]}"
-    fi
 }
 
 cfg_tests() {
@@ -481,7 +455,7 @@ cfg_tests() {
     # solutions
     fuzzy_cutoff=60
 
-    # Tests that student implemented py files for each cfg_tests/*.svg file
+    # Tests that student implemented py files for each tests/cfg_tests/*.svg file
     # Usage: cfg_tests
 
     # For C++, build the student's main()
@@ -496,11 +470,11 @@ cfg_tests() {
     fi
 
     first="0"
-    for testpath in cfg_tests/goals/*.txt; do
+    for testpath in tests/cfg_tests/goals/*.txt; do
         if [ $first = "0" ]; then
             section
             echo "$ORANGE""Below here, we will run control-flow-graph based tests.""$RESET"
-            [ $annoying_nodebug = 'd' ] && echo "See the ./cfg_tests/ folder for more detail."
+            [ $annoying_nodebug = 'd' ] && echo "See the ./tests/cfg_tests/ folder for more detail."
             first="1"
             keepgoing
             rm -rf *.svg
@@ -510,11 +484,11 @@ cfg_tests() {
         filename=$(basename $testpath)
         filename="${filename%.*}"
 
-        echo "Running command: $ $MAGENTA $cfg_generator ${filename}.py --diffable cfg_tests/outputs/${filename}.txt$RESET"
-        $cfg_generator ${filename}.py --diffable cfg_tests/outputs/${filename}.txt
+        echo "Running command: $ $MAGENTA $cfg_generator src/${filename}.py --diffable tests/cfg_tests/outputs/${filename}.txt$RESET"
+        $cfg_generator src/${filename}.py --diffable tests/cfg_tests/outputs/${filename}.txt
 
-        if diff "cfg_tests/outputs/${filename}.txt" "./$testpath" &>/dev/null; then
-            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py ${filename}_cfg.svg cfg_tests/goal_cfgs/${filename}_cfg.svg)
+        if diff "tests/cfg_tests/outputs/${filename}.txt" "./$testpath" &>/dev/null; then
+            fuzzy_diff=$(python3 .admin_files/fuzzydiffer.py ${filename}_cfg.svg tests/cfg_tests/goal_cfgs/${filename}_cfg.svg)
             if (("$fuzzy_diff" < "$fuzzy_cutoff")); then
                 grade_update "Your code CFG match with $testpath test" 0 0
             else
@@ -523,8 +497,7 @@ cfg_tests() {
             fi
         else
             grade_update "Your code CFG match with $testpath test" 0 0
-            # https://stackoverflow.com/questions/20010199/how-to-determine-if-a-process-runs-inside-lxc-docker#20012536
-            if [ "$annoying_nodebug" = "g" ] || grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
                 :
             else
                 if [ "$language" = "cpp" ]; then
@@ -547,10 +520,11 @@ cfg_tests() {
             fi
         fi
     done
+    mv ./*.svg ./tests/cfg_tests/output_cfgs/ &>/dev/null
 }
 
 doctest_tests() {
-    # Tests that student implemented py files for each cfg_tests/*.svg file
+    # Tests that student implemented py files for each tests/cfg_tests/*.svg file
     # Usage: cfg_tests
 
     # For C++, build the student's main()
@@ -581,8 +555,7 @@ doctest_tests() {
             grade_update "Doctests in function docstring" 100 0
         else
             grade_update "Doctests in function docstring" 0 0
-            # https://stackoverflow.com/questions/20010199/how-to-determine-if-a-process-runs-inside-lxc-docker#20012536
-            if [ "$annoying_nodebug" = "g" ] || grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+            if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
                 :
             else
                 if [ "$language" = "cpp" ]; then
@@ -636,14 +609,14 @@ if [ ! "$(uname)" = Linux ]; then
     exit 1
 fi
 
-if ! [ "$annoying_nodebug" = "g" ] && ! grep 'docker\|lxc' /proc/1/cgroup >/dev/null 2>&1; then
+if [ "$annoying_nodebug" = "g" ] || [[ "$IS_PIPELINE" ]] >/dev/null 2>&1; then
     if [ "$language" = "cpp" ]; then
         :
         # TODO Find a good C++ flowchart generator and run here
     elif [ "$language" = "python" ]; then
         section
         echo You may find the following Control Flow Graphs helpful in thinking about your code:
-        for pyfile in *.py; do
+        for pyfile in ./src/*.py; do
             py2cfg "$pyfile"
         done
         ls ./*.svg
@@ -656,6 +629,7 @@ if ! [ "$annoying_nodebug" = "g" ] && ! grep 'docker\|lxc' /proc/1/cgroup >/dev/
                 xdg-open "$svgfile"
             done
         fi
+        mv ./*.svg ./tests/cfg_tests/output_cfgs/ &>/dev/null
     elif [ "$language" = "bash" ]; then
         :
         # TODO A flowchart generator for bash does not likely exist...
@@ -684,13 +658,13 @@ if [ "$enable_static_analysis" = true ]; then
     keepgoing
     subsection
     if [ "$language" = "cpp" ]; then
-        echo "Running command: $" "$MAGENTA cppcheck --enable=all --error-exitcode=1 --language=c++ ./*.cpp ./*.h ./*.hpp$RESET"
+        echo "Running command: $" "$MAGENTA cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 --language=c++ ./*.cpp ./*.h ./*.hpp$RESET"
         [ $annoying_nodebug = 'd' ] && echo -e "\nSee $ ""$MAGENTA man cppcheck$RESET and $ $MAGENTA cppcheck --help$RESET for more detail.\n"
-        cppcheck --enable=all --error-exitcode=1 --language=c++ ./*.cpp ./*.h ./*.hpp
+        cppcheck --enable=all --suppress=missingIncludeSystem --error-exitcode=1 --language=c++ ./src/*.cpp ./src/*.h ./src/*.hpp
     elif [ "$language" = "python" ]; then
-        echo "Running command: $" "$MAGENTA mypy --strict --disallow-any-explicit ./*.py$RESET"
+        echo "Running command: $" "$MAGENTA mypy --strict --disallow-any-explicit ./src/*.py$RESET"
         [ $annoying_nodebug = 'd' ] && echo -e "\nSee $ ""$MAGENTA man mypy$RESET and $ $MAGENTA mypy --help$RESET for more detail.\n"
-        mypy --strict --disallow-any-explicit ./*.py
+        mypy --strict --disallow-any-explicit ./src/*.py
     elif [ "$language" = "bash" ]; then
         echo "Running command: $" "$MAGENTA shellcheck --check-sourced --external-sources $main_file $RESET"
         [ $annoying_nodebug = 'd' ] && echo -e "\nSee $ ""$MAGENTA man shellcheck$RESET and $ $MAGENTA shellcheck --help$RESET for more detail.\n"
@@ -699,7 +673,7 @@ if [ "$enable_static_analysis" = true ]; then
         :
         # cargo check
         # This is just basically the first step of compilation by cargo run...
-        # Is there any more deep check? I doubt it...
+        # Is there any even more deep check? I doubt it...
     fi
     grade_update "static analysis / typechecking" 100 0
 fi
@@ -713,16 +687,16 @@ if [ "$enable_format_check" = true ]; then
     subsection
     shopt -s nullglob
     if [ "$language" = "cpp" ]; then
-        echo "Running command: $" "$MAGENTA python3 .admin_files/run-clang-format.py -r --style=LLVM --exclude './.admin_files/build/*' .$RESET"
+        echo "Running command: $" "$MAGENTA python3 .admin_files/run-clang-format.py -r --style=LLVM .$RESET"
         [ $annoying_nodebug = 'd' ] && echo -e "\nSee $ ""$MAGENTA"" clang-format --help$RESET for more detail.\n"
-        python3 .admin_files/run-clang-format.py -r --style=LLVM --exclude './.admin_files/build/*' .
+        python3 .admin_files/run-clang-format.py -r --style=LLVM .
         # CI needed this script instead of local command?
         # clang-format --dry-run --Werror --style=Microsoft *.cpp *.h *.hpp
     elif [ "$language" = "python" ]; then
-        echo "Running command: $" "$MAGENTA black --check ./*.py$RESET"
+        echo "Running command: $" "$MAGENTA black --check ./src/*.py$RESET"
         [ $annoying_nodebug = 'd' ] && echo -e "\nSee $ ""$MAGENTA man black$RESET and $ $MAGENTA black --help$RESET for more detail."
         [ $annoying_nodebug = 'd' ] && echo -e "If you are passing locally, but not on the server, or vice-versa, check: $MAGENTA black --version$RESET\n"
-        black --check ./*.py
+        black --check ./src/*.py
     elif [ "$language" = "bash" ]; then
         echo "Running command: $" "$MAGENTA shfmt -i 4 -d .$RESET"
         # https://www.arachnoid.com/linux/beautify_bash/
@@ -780,9 +754,10 @@ done
 ######## Cleanup -> ########
 rm -rf __pycache__
 rm -rf .admin_files/__pycache__
-rm -rf .admin_files/build
 rm -rf .mypy_cache
 rm -rf unit_tests/.mypy_cache
+rm -rf ./build/*.out
+rm -rf ./*.out ./*.o
 ######## <- Cleanup ########
 
 ######## Reporting and grading -> ########

@@ -15,16 +15,15 @@ arr=(
     !(*hashes.txt)
     ../.gitlab-ci.yml
     ../Cargo.toml
-    ../cfg_tests/goals/*
-    ../cfg_tests/goal_cfgs/*
-    ../stdio_tests/goals/*
-    ../stdio_tests/inputs/*
-    ../arg_tests/args/*
-    ../arg_tests/goals/*
-    ../arg_tests/files/*
-    ../unit_tests/*
-    ../goal_files/*
-    ../web_files/*
+    ../Makefile
+    ../tests/cfg_tests/goals/*
+    ../tests/cfg_tests/goal_cfgs/*
+    ../tests/stdio_tests/goals/*
+    ../tests/stdio_tests/inputs/*
+    ../tests/arg_tests/args/*
+    ../tests/arg_tests/goals/*
+    ../tests/arg_tests/files/*
+    ../tests/unit_tests/*
 )
 
 for file_to_hash in "${arr[@]}"; do

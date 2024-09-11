@@ -130,4 +130,9 @@ If you think you found a bug, please let us know!
 
 ## grade.sh: this automated grading framework
 For more details on the generalized auto-grader, see:
+[grade-sh.md](grade-sh.md)
+
+## Improvements
+If you notice any issues or improvements, 
+please feel free to check out our source repository:
 <https://gitlab.com/classroomcode/grade-sh/grade-sh>

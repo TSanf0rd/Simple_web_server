@@ -6,7 +6,7 @@
 # In Python, this is whichever file you run via python3 whatever.py
 # In Bash, this is whichever file you run via bash whatever.sh
 # In Rust, this is src/main.rs
-main_file="web_server.py"
+main_file="src/web_server.py"
 
 # Any arguments you want passed to the main driver, upon excution.
 # If you do not have any arguments, just leave as an empty string, ""
@@ -56,9 +56,9 @@ student_file="results.txt"
 # $ file file.whatever
 declare -A file_arr
 file_arr=(
-    ["iactuallytestedthis-dockerclient-dockerserver.png"]="PNG image data"
-    ["iactuallytestedthis-dockerserver-hostbrowser.png"]="PNG image data"
-    ["report.md"]="ASCII text"
+    ["uploads/iactuallytestedthis-dockerclient-dockerserver.png"]="PNG image data"
+    ["uploads/iactuallytestedthis-dockerserver-hostbrowser.png"]="PNG image data"
+    ["uploads/report.md"]="ASCII text"
     ["compose.yaml"]="ASCII text"
 )
 ######## <- File and type existence tests ########
@@ -74,32 +74,32 @@ file_arr=(
 
 custom_test_1_server() {
     custom_test_score=0
-    rm -f your_outputs/*
+    rm -f tests/your_outputs/*
 
-    python3 web_server.py &
+    python3 src/web_server.py &
     server_PID=$!
     sleep 1s
 
     echo "================================================================================"
     echo -e "\ncurl test"
-    curl localhost:6789/web_files/hello_world.html -o your_outputs/out_curl.html &>/dev/null
-    if ! diff -yZB your_outputs/out_curl.html goal_files/hello_world.html; then
+    curl localhost:6789/tests/web_files/hello_world.html -o tests/your_outputs/out_curl.html &>/dev/null
+    if ! diff -yZB tests/your_outputs/out_curl.html tests/goal_files/hello_world.html; then
         custom_test_score=0
         return
     fi
 
     echo "================================================================================"
     echo -e "\nwget test"
-    wget localhost:6789/web_files/hello_web.html -O your_outputs/out_wget.html &>/dev/null
-    if ! diff -yZB your_outputs/out_wget.html goal_files/hello_web.html; then
+    wget localhost:6789/tests/web_files/hello_web.html -O tests/your_outputs/out_wget.html &>/dev/null
+    if ! diff -yZB tests/your_outputs/out_wget.html tests/goal_files/hello_web.html; then
         custom_test_score=0
         return
     fi
     
     echo "================================================================================"
     echo -e "\n404 test"
-    curl localhost:6789/web_files/doesnotexist.html -o your_outputs/out_404.html &>/dev/null
-    if ! diff -yZB your_outputs/out_404.html goal_files/not_found.html; then
+    curl localhost:6789/tests/web_files/doesnotexist.html -o tests/your_outputs/out_404.html &>/dev/null
+    if ! diff -yZB tests/your_outputs/out_404.html tests/goal_files/not_found.html; then
         custom_test_score=0
         return
     fi
@@ -109,8 +109,8 @@ custom_test_1_server() {
     for run in {1..10}; do
         rm -f randy.html
         echo $RANDOM >randy.html
-        wget localhost:6789/randy.html -O your_outputs/out_rand.html &>/dev/null
-        if diff -yZB your_outputs/out_rand.html randy.html; then
+        wget localhost:6789/randy.html -O tests/your_outputs/out_rand.html &>/dev/null
+        if diff -yZB tests/your_outputs/out_rand.html randy.html; then
             custom_test_score=100
         else
             custom_test_score=0
@@ -124,15 +124,15 @@ custom_test_1_server() {
 custom_test_2_server_mt() {
     custom_test_score=0
 
-    python3 blocker.py &
+    python3 src/blocker.py &
     blocker_PID=$!
     sleep 1s
     # could just ncat to server here instead...
 
     echo "================================================================================"
     echo -e "\nMulti-thread test"
-    timeout 2s curl localhost:6789/web_files/hello_world.html -o your_outputs/out_mt.html &>/dev/null
-    if diff -yZB your_outputs/out_mt.html goal_files/hello_world.html; then
+    timeout 2s curl localhost:6789/tests/web_files/hello_world.html -o tests/your_outputs/out_mt.html &>/dev/null
+    if diff -yZB tests/your_outputs/out_mt.html tests/goal_files/hello_world.html; then
         custom_test_score=100
     else
         custom_test_score=0
@@ -146,8 +146,8 @@ custom_test_3_client() {
 
     echo "================================================================================"
     echo -e "\nGet from your own server"
-    python3 client_browser.py localhost 6789 "web_files/hello_web.html" >your_outputs/out_client_local.html
-    if ! diff -yZB your_outputs/out_client_local.html goal_files/client_hello_web.html; then
+    python3 src/client_browser.py localhost 6789 "tests/web_files/hello_web.html" >tests/your_outputs/out_client_local.html
+    if ! diff -yZB tests/your_outputs/out_client_local.html tests/goal_files/client_hello_web.html; then
         custom_test_score=0
         kill $server_PID
         return
@@ -155,8 +155,8 @@ custom_test_3_client() {
 
     echo "================================================================================"
     echo -e "\nGet from remote server"
-    python3 client_browser.py info.cern.ch 80 "" >your_outputs/out_client_cern.html
-    if diff -I Date -yZB your_outputs/out_client_cern.html goal_files/client_cern.html; then
+    python3 src/client_browser.py info.cern.ch 80 "" >tests/your_outputs/out_client_cern.html
+    if diff -I Date -yZB tests/your_outputs/out_client_cern.html tests/goal_files/client_cern.html; then
         custom_test_score=100
     else
         custom_test_score=0

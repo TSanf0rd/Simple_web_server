@@ -6,11 +6,12 @@ Welcome to the World Wide Web (HTTP)
 ![](ithinkthereforeiam.png)
 
 ## Deliverables
-* `web_server.py`
-* `iactuallytestedthis-containerserver-hostbrowser.png`
-* `iactuallytestedthis-containerclient-containerserver.png`
-* `client_browser.py`
-* `report.md`
+* `src/web_server.py`
+* `src/client_browser.py`
+* `uploads/iactuallytestedthis-containerserver-hostbrowser.png`
+* `uploads/iactuallytestedthis-containerclient-containerserver.png`
+* `uploads/report.md`
+* `compose.yaml'
 
 ## Summary
 * The first assignment should have been performed in full VMs.
@@ -21,21 +22,6 @@ This assignment should be performed in containers.
 * Include screenshots of you how you ran the code,
 with your web browser and termials displaying the results in two containers.
 * All source and text files should be utf-8 with Unix delimiters, written in Python3.
-
-## Grading
-In the container itself, run the grade script via:
-
-`bash grade.sh`
-
-The `grade.sh` script is not intended to be run WSL, Mac's zsh terminal, etc.,
-but instead, only in actual Linux, like the Fedora container or VM.
-
-Open it to see what commands we run,
-and run them yourself manually!
-
-Note:
-The grade script is not intended to be run in WSL, Git-Bash, or a Mac host,
-but instead in an actual Linux VM or container.
 
 ## Hints
 * To debug your web server, open a browser, have it visit your server.
@@ -163,6 +149,6 @@ one for each of the above tasks (`container<->host` and `container<->container` 
 and specifies the network itself in the compose file.
 
 ## Part 6: Write up
-Write a `report.md` which includes:
+Write a `uploads/report.md` which includes:
 * Screenshots of the demonstration of the container-host and container-container communication.
 * Summary of your setup.
