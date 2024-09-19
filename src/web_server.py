@@ -25,30 +25,46 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
         request_line = request.splitlines()[0]  # First line is the request line
         filename = request_line.split()[1]  # Second part is the path
 
-        # Because the extracted path of the HTTP request includes
-        # a character '/', we read the path from the second character
+        # Handle root path by redirecting to a default file
         if filename == "/":
-            filename = "/web_files/hello_world.html"  # Default to index.html if no specific file requested
+            filename = "/web_files/hello_world.html"  # Default file
+
+        # Determine file path to serve
+        file_path = "." + filename  # Construct file path from current directory
+        print(f"Serving file from path: {file_path}")
+
+        # Check for the file's MIME type (for the sake of this example, we'll handle HTML only)
+        if filename.endswith(".html"):
+            content_type = "text/html"
+        else:
+            content_type = "application/octet-stream"
 
         # Read file off disk, to send
-        file_path = "." + filename  # Assuming the current directory holds files
-        print(f"Serving file from path: {file_path}")
         with open(file_path, "rb") as f:
             response_body = f.read()
 
         # Send the HTTP response header line to the connection socket
-        response_header = "HTTP/1.1 200 OK\r\n"
-        response_header += "Content-Type: text/html\r\n"
-        response_header += f"Content-Length: {len(response_body)}\r\n\r\n"
+        response_header = f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {len(response_body)}\r\n\r\n"
         conn_socket.sendall(response_header.encode())
 
         # Send the content of the requested file to the connection socket
         conn_socket.sendall(response_body)
 
     except IOError:
-        # Send HTTP response message for file not found (404)
-        response_header = "HTTP/1.1 404 Not Found\r\n\r\n"
-        response_body = b"<html><body><h1>404 Not Found</h1></body></html>"
+        # Send custom HTTP response message for file not found (404)
+        response_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n"
+        response_body = b"""
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Page not found!!</title>
+          </head>
+          <body>
+            <h1>404 Page Not Found</h1>
+            <p>Sorry, the page you're looking for does not exist.</p>
+          </body>
+        </html>
+        """
         conn_socket.sendall(response_header.encode() + response_body)
 
     except Exception as e:
@@ -77,7 +93,7 @@ def main() -> None:
             conn_socket, client_address = server_socket.accept()
             print(f"Connection established with {client_address}")
 
-            # call handler here, start any threads needed
+            # Call handler here, start any threads needed
             new_thread = threading.Thread(
                 target=handler, args=(conn_socket, client_address)
             )

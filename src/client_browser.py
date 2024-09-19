@@ -40,7 +40,7 @@ try:
     print(f"Connected to {server_hostname} ({server_ip}) on port {server_port}")
 
     # Prepare the GET request message
-    request_line = f"GET /{file_name} HTTP/1.1\r\n"
+    request_line = f"GET {file_name} HTTP/1.1\r\n"
     headers = f"Host: {server_hostname}\r\nConnection: close\r\n\r\n"
     http_request = request_line + headers
 
