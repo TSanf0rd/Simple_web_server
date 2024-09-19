@@ -28,12 +28,11 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
         # Because the extracted path of the HTTP request includes
         # a character '/', we read the path from the second character
         if filename == "/":
-            filename = (
-                "/tests/web_files/hello_world.html"  # Default to index.html if no specific file requested
-            )
+            filename = "/web_files/hello_world.html"  # Default to index.html if no specific file requested
 
         # Read file off disk, to send
         file_path = "." + filename  # Assuming the current directory holds files
+        print(f"Serving file from path: {file_path}")
         with open(file_path, "rb") as f:
             response_body = f.read()
 
@@ -79,7 +78,9 @@ def main() -> None:
             print(f"Connection established with {client_address}")
 
             # call handler here, start any threads needed
-            new_thread = threading.Thread(target=handler, args=(conn_socket, client_address))
+            new_thread = threading.Thread(
+                target=handler, args=(conn_socket, client_address)
+            )
             new_thread.start()
 
             # Just to keep track of threads
