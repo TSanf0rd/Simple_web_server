@@ -8,13 +8,22 @@ since it does not assume an index.html.
 
 import socket
 import threading
+import os
 
-
+# Handler function, which manages a single client's request. The function takes two arguments conn_socket and address
+# conn_socket:the connection socket through which commuication with the client happens
+# address: A tuple containing the IP adress and port of the client
 def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
     """
     Handles the part of the client work-flow that is client-dependent,
     and thus may be delayed by the user, blocking program flow.
     """
+    """
+    conn_socket.recv(1024).decode(): Recieves up to 1024 bytes from the client through the socket. Assume that the HTTP request will fit within this size.
+    .decode()": Convets the recieved bytes into a string (assumed to be UTF-8 encoded
+    print(f"Recevied request..."): Logs the recieved request along with the client address for debugging
+    """
+
     try:
         # Receives the request message from the client
         request = conn_socket.recv(1024).decode()
@@ -22,16 +31,22 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
 
         # Extract the path of the requested object from the message
         # The path is the second part of HTTP header, identified by [1]
+        """
+        request.splitline()[0]: The HTTP request has multiple lines. This extracts the first line (called the request line), which contains the HTTP method, the requested file path an the HTTP method, the requested file path, and the HTTP version
+        """
         request_line = request.splitlines()[0]  # First line is the request line
         filename = request_line.split()[1]  # Second part is the path
 
         # Handle root path by redirecting to a default file
-        if filename == "/":
-            filename = "/web_files/hello_world.html"  # Default file
-
+        # if filename == "/":
+        # filename = "/hello_world.html"  # Default file
+        filename = filename.lstrip("/")
         # Determine file path to serve
-        file_path = "." + filename  # Construct file path from current directory
+        file_path = (
+            "../tests/" + filename
+        )  # Construct file path from current directory
         print(f"Serving file from path: {file_path}")
+        print(f"Serving file from absolute path: {os.path.abspath(file_path)}")
 
         # Check for the file's MIME type (for the sake of this example, we'll handle HTML only)
         if filename.endswith(".html"):
@@ -61,7 +76,7 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
           </head>
           <body>
             <h1>404 Page Not Found</h1>
-            <p>Sorry, the page you're looking for does not exist.</p>
+            <p1>Sorry, the page you're looking for does not exist.</p>
           </body>
         </html>
         """
@@ -76,6 +91,7 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
 
 def main() -> None:
     server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_port = 6789
 
     # Bind the socket to server address and server port
