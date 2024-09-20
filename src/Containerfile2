@@ -1,0 +1,17 @@
+# Use an official Python image as the base
+FROM python:3.10-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any dependencies if your web client has requirements
+# RUN pip install -r requirements.txt 
+
+# Expose any ports needed for the client, if applicable (not usually needed for a client)
+# EXPOSE <client-port> 
+
+# Run the web client script when the container starts
+CMD ["python3", "web_client.py", "my-web-server"]

@@ -2,126 +2,141 @@ digraph "cluster0client_browser.py" {
 	graph [compound=True fontname="DejaVu Sans Mono" label="client_browser.py" pack=False rankdir=TB ranksep=0.02]
 	node [fontname="DejaVu Sans Mono"]
 	edge [fontname="DejaVu Sans Mono"]
-	1 [label="\"\"\"\lRun with the following command line parameters:\lpython3 client_browser.py <hostname> <port> <file>\l\lExamples:\l$ python3 client_browser.py info.cern.ch 80 \"\"  # defaults to index.html\l$ python3 client_browser.py localhost 6789 \"hello_world.html\"\l\"\"\"\limport sys\limport socket" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	2 [label="if len(sys.argv) != 4:" fillcolor="#FF6752" shape=diamond style="filled,solid"]
-	2 -> 3 [label=calls style=dashed]
-	subgraph cluster_2 {
+	1 [label="\"\"\"\lRun with the following command line parameters:\lpython3 client_browser.py <hostname> <port> <file>\l\lExamples:\l$ python3 client_browser.py info.cern.ch 80 \"\"  # defaults to index.html\l$ python3 client_browser.py localhost 6789 \"hello_world.html\"\l\"\"\"\limport sys\limport socket\ldef main() ->None:..." fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+	39 [label="if __name__ == '__main__':" fillcolor="#FF6752" shape=diamond style="filled,solid"]
+	40 [label="main()" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+	40 -> 42 [label=calls style=dashed]
+	subgraph cluster_40 {
 		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
 		node [fontname="DejaVu Sans Mono"]
 		edge [fontname="DejaVu Sans Mono"]
-		3 [label=len color="#E552FF" shape=tab style=filled]
+		42 [label=main color="#E552FF" shape=tab style=filled]
 	}
-	4 [label="server_hostname = 'localhost'\lserver_ip = '127.0.0.1'\lserver_port = 6789\lfile_name = '/web_files/hello_world.html'" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	14 [label="client_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+	39 -> 40 [label="__name__ == '__main__'" color=green]
+	1 -> 39 [label="" color=black]
+	subgraph cluster0main {
+		graph [compound=True fontname="DejaVu Sans Mono" label=main pack=False rankdir=TB ranksep=0.02]
+		node [fontname="DejaVu Sans Mono"]
+		edge [fontname="DejaVu Sans Mono"]
+		3 [label="if len(sys.argv) != 4:" fillcolor="#FF6752" shape=diamond style="filled,solid"]
+		3 -> 4 [label=calls style=dashed]
+		subgraph cluster_3 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			4 [label=len color="#E552FF" shape=tab style=filled]
+		}
+		5 [label="server_hostname = 'localhost'\lserver_ip = '127.0.0.1'\lserver_port = 6789\lfile_name = 'web_files/hello_world.html'" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		15 [label="client_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 client_socket.connect((server_ip, server_port))
 print(f'Connected to {server_hostname} ({server_ip}) on port {server_port}')
-request_line = f'GET {file_name} HTTP/1.1\r\n'
+request_line = f'GET /{file_name} HTTP/1.1\r\n'
 headers = f'Host: {server_hostname}\r\nConnection: close\r\n\r\n'
 http_request = request_line + headers
 client_socket.sendall(http_request.encode())
 print(f\"\"\"Sent request:
 {http_request}\"\"\")
 response = b''" fillcolor=orange shape=Mdiamond style="filled,solid"]
-	16 [label="print('Exception was:', e)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	16 -> 17 [label=calls style=dashed]
-	subgraph cluster_16 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		17 [label=print color="#E552FF" shape=tab style=filled]
+		17 [label="print('Exception was:', e)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		17 -> 18 [label=calls style=dashed]
+		subgraph cluster_17 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			18 [label=print color="#E552FF" shape=tab style=filled]
+		}
+		16 [label="client_socket.close()" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		16 -> 36 [label=calls style=dashed]
+		subgraph cluster_16 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			36 [label="client_socket.close" color="#E552FF" shape=tab style=filled]
+		}
+		17 -> 16 [label="" color=black]
+		15 -> 19 [label=calls style=dashed]
+		15 -> 20 [label=calls style=dashed]
+		15 -> 21 [label=calls style=dashed]
+		15 -> 22 [label=calls style=dashed]
+		15 -> 24 [label=calls style=dashed]
+		subgraph cluster_15 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			19 [label="socket.socket" color="#E552FF" shape=tab style=filled]
+			20 [label="client_socket.connect" color="#E552FF" shape=tab style=filled]
+			21 [label=print color="#E552FF" shape=tab style=filled]
+			22 [label="client_socket.sendall" color="#E552FF" shape=tab style=filled]
+			23 [label="http_request.encode" color="#E552FF" shape=tab style=filled]
+			22 -> 23 [color=black]
+			24 [label=print color="#E552FF" shape=tab style=filled]
+		}
+		25 [label="while True:" fillcolor="#FFBE52" shape=hexagon style="filled,solid"]
+		26 [label="data = client_socket.recv(1024)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		26 -> 28 [label=calls style=dashed]
+		subgraph cluster_26 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			28 [label="client_socket.recv" color="#E552FF" shape=tab style=filled]
+		}
+		29 [label="if not data:" fillcolor="#FF6752" shape=diamond style="filled,solid"]
+		30 [label=break fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		27 [label="print('Response from server:')\lprint(response.decode())" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		27 -> 33 [label=calls style=dashed]
+		27 -> 34 [label=calls style=dashed]
+		subgraph cluster_27 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			33 [label=print color="#E552FF" shape=tab style=filled]
+			34 [label=print color="#E552FF" shape=tab style=filled]
+			35 [label="response.decode" color="#E552FF" shape=tab style=filled]
+			34 -> 35 [color=black]
+		}
+		27 -> 16 [label="" color=black]
+		30 -> 27 [label="" color=black]
+		29 -> 30 [label="not data" color=green]
+		31 [label="response += data" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		31 -> 25 [label="" color=black]
+		29 -> 31 [label="(not not data)" color=red]
+		26 -> 29 [label="" color=black]
+		25 -> 26 [label=True color=green]
+		25 -> 27 [label="(False)" color=red]
+		15 -> 25 [label="" color=black]
+		5 -> 15 [label="" color=black]
+		3 -> 5 [label="len(sys.argv) != 4" color=green]
+		7 [label="server_hostname = sys.argv[1]\lserver_port = int(sys.argv[2])\lfile_name = sys.argv[3]" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		7 -> 8 [label=calls style=dashed]
+		subgraph cluster_7 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			8 [label=int color="#E552FF" shape=tab style=filled]
+		}
+		9 [label="server_ip = socket.gethostbyname(server_hostname)" fillcolor=orange shape=Mdiamond style="filled,solid"]
+		11 [label="print(f'Error: Unable to resolve hostname {server_hostname}')\lsys.exit(1)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
+		11 -> 12 [label=calls style=dashed]
+		11 -> 13 [label=calls style=dashed]
+		subgraph cluster_11 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			12 [label=print color="#E552FF" shape=tab style=filled]
+			13 [label="sys.exit" color="#E552FF" shape=tab style=filled]
+		}
+		11 -> 15 [label="" color=black]
+		9 -> 14 [label=calls style=dashed]
+		subgraph cluster_9 {
+			graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
+			node [fontname="DejaVu Sans Mono"]
+			edge [fontname="DejaVu Sans Mono"]
+			14 [label="socket.gethostbyname" color="#E552FF" shape=tab style=filled]
+		}
+		9 -> 15 [label="" color=black]
+		7 -> 9 [label="" color=black]
+		3 -> 7 [label="(len(sys.argv) == 4)" color=red]
 	}
-	15 [label="client_socket.close()" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	15 -> 35 [label=calls style=dashed]
-	subgraph cluster_15 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		35 [label="client_socket.close" color="#E552FF" shape=tab style=filled]
-	}
-	16 -> 15 [label="" color=black]
-	14 -> 18 [label=calls style=dashed]
-	14 -> 19 [label=calls style=dashed]
-	14 -> 20 [label=calls style=dashed]
-	14 -> 21 [label=calls style=dashed]
-	14 -> 23 [label=calls style=dashed]
-	subgraph cluster_14 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		18 [label="socket.socket" color="#E552FF" shape=tab style=filled]
-		19 [label="client_socket.connect" color="#E552FF" shape=tab style=filled]
-		20 [label=print color="#E552FF" shape=tab style=filled]
-		21 [label="client_socket.sendall" color="#E552FF" shape=tab style=filled]
-		22 [label="http_request.encode" color="#E552FF" shape=tab style=filled]
-		21 -> 22 [color=black]
-		23 [label=print color="#E552FF" shape=tab style=filled]
-	}
-	24 [label="while True:" fillcolor="#FFBE52" shape=hexagon style="filled,solid"]
-	25 [label="data = client_socket.recv(1024)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	25 -> 27 [label=calls style=dashed]
-	subgraph cluster_25 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		27 [label="client_socket.recv" color="#E552FF" shape=tab style=filled]
-	}
-	28 [label="if not data:" fillcolor="#FF6752" shape=diamond style="filled,solid"]
-	29 [label=break fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	26 [label="print('Response from server:')\lprint(response.decode())" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	26 -> 32 [label=calls style=dashed]
-	26 -> 33 [label=calls style=dashed]
-	subgraph cluster_26 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		32 [label=print color="#E552FF" shape=tab style=filled]
-		33 [label=print color="#E552FF" shape=tab style=filled]
-		34 [label="response.decode" color="#E552FF" shape=tab style=filled]
-		33 -> 34 [color=black]
-	}
-	26 -> 15 [label="" color=black]
-	29 -> 26 [label="" color=black]
-	28 -> 29 [label="not data" color=green]
-	30 [label="response += data" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	30 -> 24 [label="" color=black]
-	28 -> 30 [label="(not not data)" color=red]
-	25 -> 28 [label="" color=black]
-	24 -> 25 [label=True color=green]
-	24 -> 26 [label="(False)" color=red]
-	14 -> 24 [label="" color=black]
-	4 -> 14 [label="" color=black]
-	2 -> 4 [label="len(sys.argv) != 4" color=green]
-	6 [label="server_hostname = sys.argv[1]\lserver_port = int(sys.argv[2])\lfile_name = sys.argv[3]" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	6 -> 7 [label=calls style=dashed]
-	subgraph cluster_6 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		7 [label=int color="#E552FF" shape=tab style=filled]
-	}
-	8 [label="server_ip = socket.gethostbyname(server_hostname)" fillcolor=orange shape=Mdiamond style="filled,solid"]
-	10 [label="print(f'Error: Unable to resolve hostname {server_hostname}')\lsys.exit(1)" fillcolor="#FFFB81" shape=rectangle style="filled,solid"]
-	10 -> 11 [label=calls style=dashed]
-	10 -> 12 [label=calls style=dashed]
-	subgraph cluster_10 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		11 [label=print color="#E552FF" shape=tab style=filled]
-		12 [label="sys.exit" color="#E552FF" shape=tab style=filled]
-	}
-	10 -> 14 [label="" color=black]
-	8 -> 13 [label=calls style=dashed]
-	subgraph cluster_8 {
-		graph [color=purple compound=true fontname="DejaVu Sans Mono" label="" rankdir=TB ranksep=0.02 shape=tab style=filled]
-		node [fontname="DejaVu Sans Mono"]
-		edge [fontname="DejaVu Sans Mono"]
-		13 [label="socket.gethostbyname" color="#E552FF" shape=tab style=filled]
-	}
-	8 -> 14 [label="" color=black]
-	6 -> 8 [label="" color=black]
-	2 -> 6 [label="(len(sys.argv) == 4)" color=red]
-	1 -> 2 [label="" color=black]
 	subgraph cluster_KEY {
 		graph [fontname="DejaVu Sans Mono" label=KEY]
 		node [fontname="DejaVu Sans Mono"]

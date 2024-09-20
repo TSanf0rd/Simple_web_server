@@ -1,0 +1,24 @@
+version: '3.8'  # Define the version of Docker Compose
+
+services:
+  web-server:
+    image: web-server  # Name of the web server image
+    build:
+      context: .          # Build from the current directory
+    ports:
+      - "6789:6789"         # Maps port 80 of the container to port 8080 on the host for container-to-host communication
+    networks:
+      - container-network  # Use the same network for both services
+
+  web-client:
+    image: my-web-client  # Name of the web client image
+    build:
+      context: .          # Build from the current directory
+    depends_on:
+      - web-server        # Ensure the web server starts first
+    networks:
+      - container-network  # Use the same network for container-to-container communication
+
+networks:
+  my-container-network:
+    driver: bridge        # Bridge network driver for internal communication between containers
