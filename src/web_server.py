@@ -10,6 +10,7 @@ import socket
 import threading
 import os
 
+
 # Handler function, which manages a single client's request. The function takes two arguments conn_socket and address
 # conn_socket:the connection socket through which commuication with the client happens
 # address: A tuple containing the IP adress and port of the client
@@ -37,35 +38,41 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
         request_line = request.splitlines()[0]  # First line is the request line
         filename = request_line.split()[1]  # Second part is the path
 
-        # Handle root path by redirecting to a default file
+        # filename = filename.lstrip("/")
+        if filename == "/":
+            filename = "/index.html"
+
+        file_path = "." + filename
         # if filename == "/":
         # filename = "/hello_world.html"  # Default file
-        filename = filename.lstrip("/")
+        # filename = filename.lstrip("/")
         # Determine file path to serve
-        file_path = (
-            "../tests/" + filename
-        )  # Construct file path from current directory
+        # file_path = "../tests/" + filename  # Construct file path from current directory
         print(f"Serving file from path: {file_path}")
         print(f"Serving file from absolute path: {os.path.abspath(file_path)}")
 
         # Check for the file's MIME type (for the sake of this example, we'll handle HTML only)
-        if filename.endswith(".html"):
-            content_type = "text/html"
-        else:
-            content_type = "application/octet-stream"
+        # if filename.endswith(".html"):
+        # content_type = "text/html"
+        # else:
+        # content_type = "application/octet-stream"
 
         # Read file off disk, to send
         with open(file_path, "rb") as f:
             response_body = f.read()
 
         # Send the HTTP response header line to the connection socket
-        response_header = f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {len(response_body)}\r\n\r\n"
+        # response_header = f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {len(response_body)}\r\n\r\n"
+        response_header = "HTTP/1.1 200 OK\r\n"
+        response_header += "Content-Type: text/html\r\n"
+        response_header += f"Content-Length: {len(response_body)}\r\n\r\n"
+
         conn_socket.sendall(response_header.encode())
 
         # Send the content of the requested file to the connection socket
         conn_socket.sendall(response_body)
 
-    except IOError:
+    except FileNotFoundError:
         # Send custom HTTP response message for file not found (404)
         response_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n"
         response_body = b"""
@@ -89,7 +96,7 @@ def handler(conn_socket: socket.socket, address: tuple[str, int]) -> None:
         conn_socket.close()
 
 
-def main() -> None:
+def main():
     server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_port = 6789
